@@ -11,14 +11,14 @@ import numpy as np  # Added for array operations
 # Hyperparameters and configurations
 IMAGE_DIR = Path("depth_dataset/images")
 DEPTH_DIR = Path("depth_dataset/depths")
-MODEL_PATH = "save_models/depth_model_v1"
+MODEL_PATH = "saved_models/depth_model_v1.pt"
 HF_MODEL = "LiheYoung/depth-anything-small-hf"
 SAVE_MODEL_PATH = "saved_models"
 SAVE_MODEL_NAME = "depth_model_v1.pt"
-PRETRAINED = False
+PRETRAINED = True
 BATCH_SIZE = 1
-LEARNING_RATE = 5e-5
-NUM_EPOCHS = 2
+LEARNING_RATE = 3e-5
+NUM_EPOCHS = 600
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 RESULTS_DIR = "results"  # Added visualization directory
 
@@ -63,10 +63,9 @@ def create_dataset(image_dir, depth_dir, processor, batch_size, shuffle=True):
 
 # Load model function (unchanged)
 def load_model(pretrained=True):
+    model = AutoModelForDepthEstimation.from_pretrained(HF_MODEL)
     if pretrained:
-        model = AutoModelForDepthEstimation.from_pretrained(MODEL_PATH)
-    else:
-        model = AutoModelForDepthEstimation.from_pretrained(HF_MODEL)
+        model.load_state_dict(torch.load(MODEL_PATH))
     model.to(DEVICE)
     return model
 
@@ -86,7 +85,7 @@ def train(
     best_loss = float("inf")
 
     for epoch in range(num_epochs):
-        print(f"Epoch {epoch + 1}/{num_epochs} started...")
+        print(f"Epoch {epoch + 1}/{num_epochs} started on device {DEVICE} ...")
         model.train()
         total_loss = 0
 
