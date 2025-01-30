@@ -7,7 +7,7 @@ from pathlib import Path
 kp_data = Path("kp_dataset")
 
 
-def create_mask(data, json_file):
+def create_fence_mask_from_json(data, json_file):
     # Inicjalizacja list na punkty kluczowe
     kp_h = []  # Punkty dla Fence_KP_Horizontal
     kp_v = []  # Punkty dla Fence_KP_Vertical
@@ -58,17 +58,10 @@ def create_mask(data, json_file):
             line_thickness,
         )
 
-    # cv2.imshow("Fence", array)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
-
-    cv2.imwrite(str(json_file).replace(".json", ".bmp"), array)
+    return array
+    # cv2.imwrite(str(json_file).replace(".json", ".bmp"), array)
 
 
 # kp_h i kp_v zawierają teraz listy krotek
 
 # Wczytanie danych z pliku JSON
-for json_file in kp_data.glob("*.json"):
-    with open(str(json_file), "r") as file:
-        data = json.load(file)
-        create_mask(data, json_file)
