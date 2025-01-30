@@ -26,7 +26,7 @@ if __name__ == "__main__":
     for json_file in kp_data.glob("*.json"):
         with open(json_file, "r") as file:
             data = json.load(file)
-            mask = create_fence_mask_from_json(data, json_file).squeeze()
+            mask = create_fence_mask_from_json(data).squeeze()
 
             # Determine crop boundaries
             non_zero = mask > 0
