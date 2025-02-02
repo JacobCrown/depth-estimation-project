@@ -11,14 +11,14 @@ import numpy as np  # Added for array operations
 # Hyperparameters and configurations
 IMAGE_DIR = Path("depth_dataset/images")
 DEPTH_DIR = Path("depth_dataset/depths")
-MODEL_PATH = "saved_models/depth_model_v1.pt"
-HF_MODEL = "LiheYoung/depth-anything-small-hf"
+MODEL_PATH = "saved_models/depth_model_v2"
+HF_MODEL = "LiheYoung/depth-anything-base-hf"
 SAVE_MODEL_PATH = "saved_models"
-SAVE_MODEL_NAME = "depth_model_v1.pt"
+SAVE_MODEL_NAME = "depth_model_v2"
 PRETRAINED = True
 BATCH_SIZE = 1
 LEARNING_RATE = 3e-5
-NUM_EPOCHS = 600
+NUM_EPOCHS = 10
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 RESULTS_DIR = "results"  # Added visualization directory
 
@@ -63,9 +63,12 @@ def create_dataset(image_dir, depth_dir, processor, batch_size, shuffle=True):
 
 # Load model function (unchanged)
 def load_model(pretrained=True):
-    model = AutoModelForDepthEstimation.from_pretrained(HF_MODEL)
     if pretrained:
-        model.load_state_dict(torch.load(MODEL_PATH))
+        print(f"Loading model from local path: {MODEL_PATH}")
+        model = AutoModelForDepthEstimation.from_pretrained(MODEL_PATH)
+    else:
+        print(f"Loading model from Hugging Face model hub: {HF_MODEL}")
+        model = AutoModelForDepthEstimation.from_pretrained(HF_MODEL)
     model.to(DEVICE)
     return model
 
@@ -73,7 +76,7 @@ def load_model(pretrained=True):
 # Save model function (unchanged)
 def save_model(model, save_path, save_model_name):
     model_save_path = os.path.join(save_path, save_model_name)
-    torch.save(model.state_dict(), model_save_path)
+    model.save_pretrained(model_save_path)
     print(f"Model saved to {model_save_path}")
 
 
@@ -117,7 +120,7 @@ def train(
 
 
 # Added visualization function
-def visualize_results(model, dataloader, processor, save_dir):
+def visualize_results(model, dataloader, processor, save_dir, save_model_name):
     model.eval()
     for batch_idx, batch in enumerate(dataloader):
         pixel_values = batch["pixel_values"].to(DEVICE)
@@ -150,13 +153,15 @@ def visualize_results(model, dataloader, processor, save_dir):
 
         # Save plot
         img_name = dataloader.dataset.image_files[batch_idx].stem
-        plt.savefig(f"{save_dir}/comparison_{img_name}.png", bbox_inches="tight")
+        save_path = Path(save_dir) / save_model_name / f"{img_name}.png"
+        save_path.parent.mkdir(parents=True, exist_ok=True)
+        plt.savefig(str(save_path), bbox_inches="tight")
         plt.close()
 
 
 # Main execution block with visualization
 if __name__ == "__main__":
-    processor = AutoImageProcessor.from_pretrained(HF_MODEL)
+    processor = AutoImageProcessor.from_pretrained(HF_MODEL, use_fast=True)
     train_loader = create_dataset(IMAGE_DIR, DEPTH_DIR, processor, BATCH_SIZE)
     model = load_model(PRETRAINED)
 
@@ -165,7 +170,7 @@ if __name__ == "__main__":
     )
 
     # Load best model for visualization
-    model.load_state_dict(torch.load(os.path.join(SAVE_MODEL_PATH, SAVE_MODEL_NAME)))
+    model = AutoModelForDepthEstimation.from_pretrained(MODEL_PATH)
 
     # Create visualization dataloader without shuffling
     vis_loader = create_dataset(
@@ -173,5 +178,5 @@ if __name__ == "__main__":
     )
 
     # Generate and save visualizations
-    visualize_results(model, vis_loader, processor, RESULTS_DIR)
+    visualize_results(model, vis_loader, processor, RESULTS_DIR, SAVE_MODEL_NAME)
     print(f"Visualizations saved to {RESULTS_DIR} directory")
