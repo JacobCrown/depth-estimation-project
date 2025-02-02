@@ -18,7 +18,7 @@ SAVE_MODEL_NAME = "depth_model_v2"
 PRETRAINED = True
 BATCH_SIZE = 1
 LEARNING_RATE = 3e-5
-NUM_EPOCHS = 10
+NUM_EPOCHS = 500
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 RESULTS_DIR = "results"  # Added visualization directory
 
@@ -170,7 +170,7 @@ if __name__ == "__main__":
     )
 
     # Load best model for visualization
-    model = AutoModelForDepthEstimation.from_pretrained(MODEL_PATH)
+    model = AutoModelForDepthEstimation.from_pretrained(MODEL_PATH).to(DEVICE)
 
     # Create visualization dataloader without shuffling
     vis_loader = create_dataset(
